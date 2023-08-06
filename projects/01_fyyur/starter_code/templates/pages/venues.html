@@ -12,6 +12,8 @@
 					<h5>{{ venue.name }}</h5>
 				</div>
 			</a>
+			<!-- Delete Button -->
+			<button onclick="deleteVenue({{ venue.id }})" class="btn btn-danger">Delete</button>
 		</li>
 		{% endfor %}
 	</ul>
