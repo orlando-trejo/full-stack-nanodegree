@@ -5,13 +5,14 @@
 import json
 import dateutil.parser
 import babel
-from flask import Flask, render_template, request, Response, flash, redirect, url_for
+from flask import Flask, render_template, request, Response, flash, redirect, url_for, jsonify
 from flask_moment import Moment
 from flask_sqlalchemy import SQLAlchemy
 import logging
 from logging import Formatter, FileHandler
 from flask_wtf import Form
 from forms import *
+from flask_migrate import Migrate
 #----------------------------------------------------------------------------#
 # App Config.
 #----------------------------------------------------------------------------#
@@ -20,7 +21,7 @@ app = Flask(__name__)
 moment = Moment(app)
 app.config.from_object('config')
 db = SQLAlchemy(app)
-
+migrate = Migrate(app, db)
 # TODO: connect to a local postgresql database
 
 #----------------------------------------------------------------------------#
@@ -38,8 +39,13 @@ class Venue(db.Model):
     phone = db.Column(db.String(120))
     image_link = db.Column(db.String(500))
     facebook_link = db.Column(db.String(120))
+    website_link = db.Column(db.String(120))
+    genres = db.Column(db.String(120))
+    seeking_talent = db.Column(db.Boolean, default=False)
+    seeking_description = db.Column(db.String(500))
 
-    # TODO: implement any missing fields, as a database migration using Flask-Migrate
+    # Relationships
+    shows = db.relationship('Show', backref='venue', lazy=True)
 
 class Artist(db.Model):
     __tablename__ = 'Artist'
@@ -52,10 +58,18 @@ class Artist(db.Model):
     genres = db.Column(db.String(120))
     image_link = db.Column(db.String(500))
     facebook_link = db.Column(db.String(120))
+    website_link = db.Column(db.String(120))
 
-    # TODO: implement any missing fields, as a database migration using Flask-Migrate
+    # Relationships
+    shows = db.relationship('Show', backref='artist', lazy=True)
 
-# TODO Implement Show and Artist models, and complete all model relationships and properties, as a database migration.
+class Show(db.Model):
+   __tablename__ = 'Show'
+
+   id = db.Column(db.Integer, primary_key=True)
+   date = db.Column(db.DateTime, nullable=True)
+   artist_id = db.Column(db.Integer, db.ForeignKey("Artist.id"), nullable=False)
+   venue_id = db.Column(db.Integer, db.ForeignKey("Venue.id"), nullable=False)
 
 #----------------------------------------------------------------------------#
 # Filters.
@@ -219,15 +233,42 @@ def create_venue_form():
 
 @app.route('/venues/create', methods=['POST'])
 def create_venue_submission():
-  # TODO: insert form data as a new Venue record in the db, instead
-  # TODO: modify data to be the data object returned from db insertion
+    form = VenueForm(request.form)
+    try:
+        # Create new Venue object
+        venue = Venue(
+            name=form.name.data,
+            city=form.city.data,
+            state=form.state.data,
+            address=form.address.data,
+            phone=form.phone.data,
+            image_link=form.image_link.data,
+            facebook_link=form.facebook_link.data,
+            website_link=form.website_link.data,
+            genres=form.genres.data,
+            seeking_talent=form.seeking_talent.data,
+            seeking_description=form.seeking_description.data
+        )
+        
+        # Add and commit the new venue to the database
+        db.session.add(venue)
+        db.session.commit()
 
-  # on successful db insert, flash success
-  flash('Venue ' + request.form['name'] + ' was successfully listed!')
-  # TODO: on unsuccessful db insert, flash an error instead.
-  # e.g., flash('An error occurred. Venue ' + data.name + ' could not be listed.')
-  # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
-  return render_template('pages/home.html')
+        # Flash success message
+        flash('Venue ' + request.form['name'] + ' was successfully listed!')
+    except:
+        # Rollback the session in case of an error
+        db.session.rollback()
+
+        # Flash error message
+        flash('An error occurred. Venue ' + request.form['name'] + ' could not be listed.')
+
+    finally:
+        # Close the session
+        db.session.close()
+
+    return render_template('pages/home.html')
+
 
 @app.route('/venues/<venue_id>', methods=['DELETE'])
 def delete_venue(venue_id):
@@ -236,7 +277,20 @@ def delete_venue(venue_id):
 
   # BONUS CHALLENGE: Implement a button to delete a Venue on a Venue Page, have it so that
   # clicking that button delete it from the db then redirect the user to the homepage
-  return None
+  try:
+    venue_to_delte = Venue.query.filter_by(id=venue_id).delete()
+    if venue_to_delte:
+       db.session.delete(venue_to_delte)
+       db.session.commit()
+       return jsonify(success=True)
+    else:
+      db.session.rollback()
+      return jsonify(success=False, error="Venue not found")
+  except Exception as e:
+     db.session.rollback()
+     return jsonify(success=False, error=str(e))
+  finally:
+     db.session.close()
 
 #  Artists
 #  ----------------------------------------------------------------
