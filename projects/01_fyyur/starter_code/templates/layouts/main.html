@@ -126,7 +126,7 @@
           success: function(result) {
             if (result.success) {
               alert('Venue deleted successfully!');
-              location.reload(); // Or redirect to another page
+              window.location.href = '/';
             } else {
               alert('An error occurred while deleting the venue.');
             }
