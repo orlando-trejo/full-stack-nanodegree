@@ -123,7 +123,7 @@ def venues():
       })
   
   data=list(areas.values())
-  return render_template('pages/venues.html', areas=data);
+  return render_template('pages/venues.html', areas=data)
 
 @app.route('/venues/search', methods=['POST'])
 def search_venues():
@@ -280,16 +280,13 @@ def delete_venue(venue_id):
 @app.route('/artists')
 def artists():
   # TODO: replace with real data returned from querying the database
-  data=[{
-    "id": 4,
-    "name": "Guns N Petals",
-  }, {
-    "id": 5,
-    "name": "Matt Quevedo",
-  }, {
-    "id": 6,
-    "name": "The Wild Sax Band",
-  }]
+  artists = Artist.query.all()
+  data = []
+  for artist in artists:
+     data.append({
+        "id": artist.id,
+        "name": artist.name
+     })
   return render_template('pages/artists.html', artists=data)
 
 @app.route('/artists/search', methods=['POST'])
@@ -382,7 +379,23 @@ def show_artist(artist_id):
     "past_shows_count": 0,
     "upcoming_shows_count": 3,
   }
-  data = list(filter(lambda d: d['id'] == artist_id, [data1, data2, data3]))[0]
+  artist = Artist.query.get(artist_id)
+
+  data = {
+    "id": artist.id,
+    "name": artist.name,
+    "genres": artist.genres.strip('{}').split(','),
+    "city": artist.city,
+    "state": artist.state,
+    "phone": artist.phone,
+    "website": artist.website_link,
+    "facebook_link": artist.facebook_link,
+    "image_link": artist.image_link,
+    "past_shows": [{"artist_id": show.artist_id, "artist_name": show.artist.name, "artist_image_link": show.artist.image_link, "start_time": show.start_time} for show in artist.shows if show.start_time < datetime.now()],
+    "upcoming_shows": [{"artist_id": show.artist_id, "artist_name": show.artist.name, "artist_image_link": show.artist.image_link, "start_time": show.start_time} for show in artist.shows if show.start_time >= datetime.now()],
+    "past_shows_count": len([show for show in artist.shows if show.start_time < datetime.now()]),
+    "upcoming_shows_count": len([show for show in artist.shows if show.start_time >= datetime.now()]),
+  }
   return render_template('pages/show_artist.html', artist=data)
 
 #  Update
@@ -541,10 +554,13 @@ def create_show_submission():
   # TODO: insert form data as a new Show record in the db, instead
 
   # on successful db insert, flash success
-  flash('Show was successfully listed!')
+  # flash('Show was successfully listed!')
   # TODO: on unsuccessful db insert, flash an error instead.
   # e.g., flash('An error occurred. Show could not be listed.')
   # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
+  
+
+
   return render_template('pages/home.html')
 
 @app.errorhandler(404)
