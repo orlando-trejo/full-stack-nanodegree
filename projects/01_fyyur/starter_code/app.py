@@ -319,26 +319,32 @@ def edit_venue_submission(venue_id):
   # venue record with ID <venue_id> using the new attributes
   form = VenueForm(request.form)
   venue = Venue.query.get(venue_id)
-  venue.name = form.name.data
-  venue.genres = form.genres.data
-  venue.address = form.address.data
-  venue.city = form.city.data
-  venue.state = form.state.data
-  venue.phone = form.phone.data
-  venue.website_link = form.website_link.data
-  venue.facebook_link = form.facebook_link.data
-  venue.seeking_talent = form.seeking_talent.data
-  venue.seeking_description = form.seeking_description.data
-  venue.image_link = form.image_link.data
+  if request.method == 'POST' and form.validate():
+    venue.name = form.name.data
+    venue.genres = form.genres.data
+    venue.address = form.address.data
+    venue.city = form.city.data
+    venue.state = form.state.data
+    venue.phone = form.phone.data
+    venue.website_link = form.website_link.data
+    venue.facebook_link = form.facebook_link.data
+    venue.seeking_talent = form.seeking_talent.data
+    venue.seeking_description = form.seeking_description.data
+    venue.image_link = form.image_link.data
 
-  try:
-     db.session.commit()
-     flash('Venue was successfully updated.')
-  except:
-     db.session.rollback()
-     flash('An error occurred. Venue could not be upated.')
+    try:
+      db.session.commit()
+      flash('Venue was successfully updated.')
+    except:
+      db.session.rollback()
+      flash('An error occurred. Venue could not be upated.')
+    finally:
+      db.session.close()
 
-  return redirect(url_for('show_venue', venue_id=venue_id))
+    return redirect(url_for('show_venue', venue_id=venue_id))
+  else:
+    return render_template('forms/edit_venue.html', form=form, venue=venue)
+
 
 #  Create Artist
 #  ----------------------------------------------------------------
