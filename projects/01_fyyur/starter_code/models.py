@@ -1,5 +1,6 @@
 
 from app import db
+from sqlalchemy import CheckConstraint, text, and_
 
 #----------------------------------------------------------------------------#
 # Models.
@@ -14,7 +15,7 @@ class Venue(db.Model):
     city = db.Column(db.String(120))
     state = db.Column(db.String(120))
     address = db.Column(db.String(120))
-    phone = db.Column(db.String(120))
+    phone = db.Column(db.String(120), nullable=True, unique=True)
     image_link = db.Column(db.String(500))
     facebook_link = db.Column(db.String(120))
     website_link = db.Column(db.String(120))
@@ -24,6 +25,11 @@ class Venue(db.Model):
 
     # Relationships
     shows = db.relationship('Show', backref='venue', lazy=True)
+
+    # Constraints
+    __table_args__ = (
+        CheckConstraint(and_(text("length(phone) = 10"), text("phone ~ '^[0-9]+$'")), name='check_phone_number'),
+    )
 
 class Artist(db.Model):
     __tablename__ = 'Artist'
@@ -42,6 +48,11 @@ class Artist(db.Model):
 
     # Relationships
     shows = db.relationship('Show', backref='artist', lazy=True)
+
+    # Constraints
+    __table_args__ = (
+        CheckConstraint(and_(text("length(phone) = 10"), text("phone ~ '^[0-9]+$'")), name='check_phone_number'),
+    )
 
 class Show(db.Model):
    __tablename__ = 'Show'
