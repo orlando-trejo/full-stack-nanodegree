@@ -11,43 +11,17 @@ from flask_sqlalchemy import SQLAlchemy
 import logging
 from logging import Formatter, FileHandler
 from flask_wtf import Form
-from forms import *
+from .forms import *
 from flask_migrate import Migrate
 from datetime import datetime
 from sqlalchemy import or_
-
-
-#----------------------------------------------------------------------------#
-# App Config.
-#----------------------------------------------------------------------------#
-
-app = Flask(__name__)
-moment = Moment(app)
-app.config.from_object('config')
-db = SQLAlchemy(app)
-migrate = Migrate(app, db)
-# TODO: connect to a local postgresql database
-
-
-#----------------------------------------------------------------------------#
-# Filters.
-#----------------------------------------------------------------------------#
-
-def format_datetime(value, format='medium'):
-  date = dateutil.parser.parse(value)
-  if format == 'full':
-      format="EEEE MMMM, d, y 'at' h:mma"
-  elif format == 'medium':
-      format="EE MM, dd, y h:mma"
-  return babel.dates.format_datetime(date, format, locale='en')
-
-app.jinja_env.filters['datetime'] = format_datetime
-
-from models import Venue, Artist, Show
-
+from starter_code.models import Venue, Artist, Show
+from . import db, create_app
 #----------------------------------------------------------------------------#
 # Controllers.
 #----------------------------------------------------------------------------#
+app = create_app()
+
 
 @app.route('/')
 def index():
@@ -450,22 +424,3 @@ def create_show_submission():
      db.session.close()
   return render_template('pages/home.html')
 
-
-@app.errorhandler(404)
-def not_found_error(error):
-    return render_template('errors/404.html'), 404
-
-@app.errorhandler(500)
-def server_error(error):
-    return render_template('errors/500.html'), 500
-
-
-if not app.debug:
-    file_handler = FileHandler('error.log')
-    file_handler.setFormatter(
-        Formatter('%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]')
-    )
-    app.logger.setLevel(logging.INFO)
-    file_handler.setLevel(logging.INFO)
-    app.logger.addHandler(file_handler)
-    app.logger.info('errors')
