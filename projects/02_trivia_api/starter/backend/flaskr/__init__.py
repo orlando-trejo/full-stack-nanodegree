@@ -8,6 +8,7 @@ from models import setup_db, db, Question, Category
 
 QUESTIONS_PER_PAGE = 10
 
+
 def create_app(test_config=None):
   # create and configure the app
   app = Flask(__name__)
@@ -77,16 +78,19 @@ def create_app(test_config=None):
   
   @app.route('/questions/<int:question_id>', methods=['DELETE'])
   def delete_questions(question_id):
-    question = Question.query.filter(Question.id==question_id).one_or_none()
     try:
+      question = Question.query.get(question_id)
       if question is None:
         abort(404)
 
       question.delete()
 
+      questions = Question.query.all()
+
       return jsonify({
         'success':True,
-        'deleted': question_id
+        'question_id': question_id,
+        'total_questions': len(questions)
       })
 
     except:
@@ -128,7 +132,6 @@ def create_app(test_config=None):
 
         return jsonify({
           'success': True,
-          'question_id': question.id,
         })
     except Exception as e:
       print(f"Error: {str(e)}")
