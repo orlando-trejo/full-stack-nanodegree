@@ -70,7 +70,62 @@ class TriviaTestCase(unittest.TestCase):
         self.assertTrue(len(data['questions']))
         self.assertIn('questions', data)
 
+    def test_delete_question(self):
+        res = self.client().delete('/questions/28')
+        data = json.loads(res.data)
 
+        
+
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(data['success'], True)
+        self.assertEqual(data['question_id'], 28)
+
+    def test_create_question(self):
+        data = {
+            'question': 'TestQuestion',
+            'answer': 'TestAnswer',
+            'category': '1',
+            'difficulty': '1'
+        }
+
+        res = self.client().post('/questions', json=data)
+
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(data['success'], True)
+
+    def test_search_questions(self):
+        data = {
+            'searchTerm': 'Taj',
+        }
+
+        res = self.client().post('/questions/search', json=data)
+
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(data['success'], True)
+
+    def test_get_questions_by_category(self):
+        res = self.client().get('/categories/1/questions')
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(data['success'], True)
+        self.assertEqual(data['current_category'], 1)
+
+    def test_play_quiz(self):
+        data = {
+            'previous_questions': []
+        }
+
+        res = self.client().post('/quizzes', json=data)
+
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(data['success'], True)
 
 # Make the tests conveniently executable
 if __name__ == "__main__":
